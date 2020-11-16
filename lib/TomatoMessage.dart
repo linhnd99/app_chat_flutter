@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+
+import 'Model/MessageMethods.dart';
 
 class TomatoMessage extends StatefulWidget {
   @override
@@ -18,10 +20,22 @@ class TomatoMessageState extends State<TomatoMessage>{
     listMessage  = new List<String>();
     txtMessage  = new TextEditingController();
     isMessaging = false;
+
+    hihi();
+
+  }
+
+  hihi() async {
+    MessageMethods messageMethods = new MessageMethods();
+    listMessage = await messageMethods.getMessages();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    CollectionReference messages = Firestore.instance.collection('MESSAGES');
+    messages.snapshots(includeMetadataChanges: true);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Message'),
@@ -40,14 +54,26 @@ class TomatoMessageState extends State<TomatoMessage>{
           Container(
             color: Colors.blue,
             height: MediaQuery.of(context).size.height-140,
-            child: ListView.builder(
-                reverse: true,
-                itemCount: listMessage.length,
-                itemBuilder: (BuildContext context, int index){
-                  return ListTile(
-                    title: Text(listMessage[index]),
-                  );
+            child: StreamBuilder<QuerySnapshot>(
+              stream: messages.snapshots(),
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasError) {
+                  return Text('Something went wrong');
                 }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Text("Loading");
+                }
+
+                return new ListView(
+                  reverse: true,
+                  children: snapshot.data.documents.map((DocumentSnapshot document) {
+                    return new ListTile(
+                      subtitle: new Text(document.data['content']),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ),
           Container(
