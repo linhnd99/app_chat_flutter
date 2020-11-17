@@ -112,4 +112,11 @@ class TomatoMessageState extends State<TomatoMessage>{
       ),
     );
   }
+
+  Future sendMessage(String text) async {
+    CollectionReference messages = Firestore.instance.collection('MESSAGES');
+    messages.snapshots(includeMetadataChanges: true);
+
+    messages.add();
+  }
 }
